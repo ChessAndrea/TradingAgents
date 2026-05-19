@@ -144,6 +144,9 @@ rabbitmq-data/
 # ActiveMQ
 activemq-data/
 
+# macOS Finder metadata
+.DS_Store
+
 # SageMath parsed files
 *.sage.py
 
