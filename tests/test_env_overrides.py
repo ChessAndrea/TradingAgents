@@ -44,6 +44,16 @@ def test_string_overrides(monkeypatch):
     assert dc.DEFAULT_CONFIG["output_language"] == "Chinese"
 
 
+def test_data_vendor_env_overrides(monkeypatch):
+    dc = _reload_with_env(
+        monkeypatch,
+        TRADINGAGENTS_CORE_STOCK_VENDOR="akshare",
+        TRADINGAGENTS_TECHNICAL_VENDOR="akshare",
+    )
+    assert dc.DEFAULT_CONFIG["data_vendors"]["core_stock_apis"] == "akshare"
+    assert dc.DEFAULT_CONFIG["data_vendors"]["technical_indicators"] == "akshare"
+
+
 def test_int_coercion(monkeypatch):
     dc = _reload_with_env(
         monkeypatch,

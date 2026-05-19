@@ -259,6 +259,11 @@ def select_deep_thinking_agent(provider) -> str:
     """Select deep thinking llm engine using an interactive selection."""
     return _select_model(provider, "deep")
 
+def _openai_url(default_url: str = "https://api.openai.com/v1") -> str:
+    """Return the configured OpenAI-compatible backend URL."""
+    return os.environ.get("TRADINGAGENTS_LLM_BACKEND_URL") or default_url
+
+
 def select_llm_provider() -> tuple[str, str | None]:
     """Select the LLM provider and its API endpoint."""
     # Ollama users can point at a remote ollama-serve via OLLAMA_BASE_URL
@@ -267,7 +272,7 @@ def select_llm_provider() -> tuple[str, str | None]:
     ollama_url = os.environ.get("OLLAMA_BASE_URL") or "http://localhost:11434/v1"
     # (display_name, provider_key, base_url)
     PROVIDERS = [
-        ("OpenAI", "openai", "https://api.openai.com/v1"),
+        ("OpenAI", "openai", _openai_url()),
         ("Google", "google", None),
         ("Anthropic", "anthropic", "https://api.anthropic.com/"),
         ("xAI", "xai", "https://api.x.ai/v1"),

@@ -3,8 +3,17 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import yfinance as yf
+from yfinance.exceptions import YFRateLimitError
 import os
 from .stockstats_utils import StockstatsUtils, _clean_dataframe, yf_retry, load_ohlcv, filter_financials_by_date
+
+
+def _rate_limit_message(symbol: str) -> str:
+    return (
+        "Yahoo Finance rate limit reached while retrieving data for "
+        f"{symbol.upper()}. The data source returned HTTP 429 after retries; "
+        "try again later, change network/proxy, or use another data vendor."
+    )
 
 def get_YFin_data_online(
     symbol: Annotated[str, "ticker symbol of the company"],
@@ -19,7 +28,10 @@ def get_YFin_data_online(
     ticker = yf.Ticker(symbol.upper())
 
     # Fetch historical data for the specified date range
-    data = yf_retry(lambda: ticker.history(start=start_date, end=end_date))
+    try:
+        data = yf_retry(lambda: ticker.history(start=start_date, end=end_date))
+    except YFRateLimitError:
+        return _rate_limit_message(symbol)
 
     # Check if data is empty
     if data.empty:
@@ -163,6 +175,8 @@ def get_stock_stats_indicators_window(
         for date_str, value in date_values:
             ind_string += f"{date_str}: {value}\n"
         
+    except YFRateLimitError:
+        return _rate_limit_message(symbol)
     except Exception as e:
         print(f"Error getting bulk stockstats data: {e}")
         # Fallback to original implementation if bulk method fails

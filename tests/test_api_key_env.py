@@ -64,6 +64,35 @@ def test_case_insensitive_lookup():
     assert get_api_key_env("QWEN-CN") == "DASHSCOPE_CN_API_KEY"
 
 
+def test_select_llm_provider_uses_openai_backend_env(monkeypatch):
+    """OpenAI-compatible proxies should be selectable through the OpenAI option."""
+    import importlib
+    import cli.utils as cli_utils
+
+    monkeypatch.setenv(
+        "TRADINGAGENTS_LLM_BACKEND_URL",
+        "https://right.codes/codex/v1",
+    )
+    cli_utils = importlib.reload(cli_utils)
+
+    class FakePrompt:
+        def ask(self):
+            return self.choice.value
+
+    fake_prompt = FakePrompt()
+
+    def fake_select(*args, choices, **kwargs):
+        fake_prompt.choice = next(choice for choice in choices if choice.title == "OpenAI")
+        return fake_prompt
+
+    monkeypatch.setattr(cli_utils.questionary, "select", fake_select)
+
+    assert cli_utils.select_llm_provider() == (
+        "openai",
+        "https://right.codes/codex/v1",
+    )
+
+
 # ---- ensure_api_key behavior ---------------------------------------------
 
 

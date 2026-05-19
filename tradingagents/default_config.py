@@ -17,6 +17,8 @@ _ENV_OVERRIDES = {
     "TRADINGAGENTS_MAX_RISK_ROUNDS":      "max_risk_discuss_rounds",
     "TRADINGAGENTS_CHECKPOINT_ENABLED":   "checkpoint_enabled",
     "TRADINGAGENTS_BENCHMARK_TICKER":     "benchmark_ticker",
+    "TRADINGAGENTS_CORE_STOCK_VENDOR":    ("data_vendors", "core_stock_apis"),
+    "TRADINGAGENTS_TECHNICAL_VENDOR":     ("data_vendors", "technical_indicators"),
 }
 
 
@@ -37,7 +39,11 @@ def _apply_env_overrides(config: dict) -> dict:
         raw = os.environ.get(env_var)
         if raw is None or raw == "":
             continue
-        config[key] = _coerce(raw, config.get(key))
+        if isinstance(key, tuple):
+            outer, inner = key
+            config[outer][inner] = _coerce(raw, config[outer].get(inner))
+        else:
+            config[key] = _coerce(raw, config.get(key))
     return config
 
 

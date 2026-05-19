@@ -1,5 +1,6 @@
 import os
 from typing import Any, Optional
+from urllib.parse import urlparse
 
 from langchain_core.messages import AIMessage
 from langchain_openai import ChatOpenAI
@@ -177,6 +178,14 @@ def _resolve_provider_base_url(provider: str) -> Optional[str]:
     return _PROVIDER_BASE_URL.get(provider)
 
 
+def _is_native_openai_endpoint(base_url: Optional[str]) -> bool:
+    """Return True when the OpenAI provider should use OpenAI's Responses API."""
+    if not base_url:
+        return True
+    hostname = urlparse(base_url).hostname or ""
+    return hostname == "api.openai.com"
+
+
 class OpenAIClient(BaseLLMClient):
     """Client for OpenAI, Ollama, OpenRouter, and xAI providers.
 
@@ -228,8 +237,9 @@ class OpenAIClient(BaseLLMClient):
                 llm_kwargs[key] = self.kwargs[key]
 
         # Native OpenAI: use Responses API for consistent behavior across
-        # all model families. Third-party providers use Chat Completions.
-        if self.provider == "openai":
+        # all model families. OpenAI-compatible proxy endpoints vary in their
+        # Responses API support, so keep them on Chat Completions.
+        if self.provider == "openai" and _is_native_openai_endpoint(self.base_url):
             llm_kwargs["use_responses_api"] = True
 
         # Provider-specific quirks live in their own subclasses so the

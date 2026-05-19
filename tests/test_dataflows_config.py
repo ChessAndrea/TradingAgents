@@ -1,6 +1,8 @@
 """Config isolation: get/set must not leak nested-dict references."""
 
 import copy
+import importlib
+import os
 import unittest
 
 import pytest
@@ -12,7 +14,17 @@ from tradingagents.dataflows.config import get_config, set_config
 @pytest.mark.unit
 class DataflowsConfigIsolationTests(unittest.TestCase):
     def setUp(self):
+        self._old_core_vendor = os.environ.pop("TRADINGAGENTS_CORE_STOCK_VENDOR", None)
+        self._old_technical_vendor = os.environ.pop("TRADINGAGENTS_TECHNICAL_VENDOR", None)
+        importlib.reload(default_config)
         set_config(copy.deepcopy(default_config.DEFAULT_CONFIG))
+
+    def tearDown(self):
+        if self._old_core_vendor is not None:
+            os.environ["TRADINGAGENTS_CORE_STOCK_VENDOR"] = self._old_core_vendor
+        if self._old_technical_vendor is not None:
+            os.environ["TRADINGAGENTS_TECHNICAL_VENDOR"] = self._old_technical_vendor
+        importlib.reload(default_config)
 
     def test_get_config_returns_deep_copy(self):
         cfg = get_config()
